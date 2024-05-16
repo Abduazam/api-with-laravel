@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace App\Http\Controllers\Api\V1\Users;
 
 use App\Http\Controllers\Api\ApiController;
+use App\Http\Filters\Api\V1\Users\UserFilter;
 use App\Http\Requests\Api\V1\Users\StoreUserRequest;
 use App\Http\Requests\Api\V1\Users\UpdateUserRequest;
 use App\Http\Resources\Api\V1\UserResource;
@@ -14,13 +15,9 @@ class UserController extends ApiController
     /**
      * Display a listing of the resource.
      */
-    public function index(): AnonymousResourceCollection
+    public function index(UserFilter $filter): AnonymousResourceCollection
     {
-        if ($this->include('tickets')) {
-            return UserResource::collection(User::with('tickets')->paginate());
-        }
-
-        return UserResource::collection(User::paginate());
+        return UserResource::collection(User::filter($filter)->paginate());
     }
 
     /**

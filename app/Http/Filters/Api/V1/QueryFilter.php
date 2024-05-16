@@ -9,6 +9,7 @@ abstract class QueryFilter
 {
     protected Builder $builder;
     protected Request $request;
+    protected array $sortable = [];
 
     public function __construct(Request $request)
     {
@@ -21,6 +22,26 @@ abstract class QueryFilter
             if (method_exists($this, $key)) {
                 $this->$key($value);
             }
+        }
+
+        return $this->builder;
+    }
+
+    protected function sort(string $attributes): Builder
+    {
+        $sortAttributes = explode(',', $attributes);
+
+        foreach($sortAttributes as $sortAttribute) {
+            $direction = str_starts_with($sortAttribute, '-') ? 'desc' : 'asc';
+            $sortAttribute = ltrim($sortAttribute, '-');
+
+            if (!array_key_exists($sortAttribute, $this->sortable) && !in_array($sortAttribute, $this->sortable)) {
+                continue;
+            }
+
+            $columnName = $this->sortable[$sortAttribute] ?? $sortAttribute;
+
+            $this->builder->orderBy($columnName, $direction);
         }
 
         return $this->builder;

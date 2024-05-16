@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace App\Http\Controllers\Api\V1\Tickets;
 
 use App\Http\Controllers\Api\ApiController;
 use App\Http\Filters\Api\V1\Tickets\TicketFilter;
