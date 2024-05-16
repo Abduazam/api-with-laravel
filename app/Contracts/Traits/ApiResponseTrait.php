@@ -20,6 +20,6 @@ trait ApiResponseTrait
         return response()->json([
             'status' => $statusCode,
             'message' => $message
-        ]);
+        ], $statusCode);
     }
 }

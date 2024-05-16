@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Contracts\Traits\ApiResponseTrait;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class ApiController extends Controller
 {
+    use ApiResponseTrait;
+
     public function __construct(protected Request $request)
     {
         //
