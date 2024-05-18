@@ -27,18 +27,11 @@ class TicketController extends ApiController
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreTicketRequest $request)
+    public function store(StoreTicketRequest $request): JsonResponse|TicketResource
     {
-        $attributes = [
-            'user_id' => $request->input('data.relationships.user.data.id'),
-            'title' => $request->input('data.attributes.title'),
-            'description' => $request->input('data.attributes.description'),
-            'status' => $request->input('data.attributes.status'),
-        ];
-
         try {
-            return DB::transaction(function () use ($attributes) {
-                $ticket = Ticket::create($attributes);
+            return DB::transaction(function () use ($request) {
+                $ticket = Ticket::create($request->mappedAttributes());
 
                 return new TicketResource($ticket);
             });
@@ -52,10 +45,10 @@ class TicketController extends ApiController
     /**
      * Display the specified resource.
      */
-    public function show(int $id): JsonResponse|TicketResource
+    public function show(int $ticketId): JsonResponse|TicketResource
     {
         try {
-            $ticket = Ticket::findOrFail($id);
+            $ticket = Ticket::findOrFail($ticketId);
 
             if ($this->include('user')) {
                 return new TicketResource($ticket->load('user'));
@@ -70,22 +63,40 @@ class TicketController extends ApiController
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateTicketRequest $request, Ticket $ticket)
+    public function update(UpdateTicketRequest $request, int $ticketId): JsonResponse|TicketResource
     {
-        //
+        try {
+            $ticket = Ticket::findOrFail($ticketId);
+
+            return DB::transaction(function () use ($request, $ticket) {
+                $ticket->update($request->mappedAttributes());
+
+                return new TicketResource($ticket);
+            });
+        } catch (ModelNotFoundException $exception) {
+            return $this->error("Ticket not found.", 404);
+        } catch (Throwable $exception) {
+            return $this->success("Couldn't update a ticket.", [
+                'error' => $exception->getMessage()
+            ]);
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Ticket $ticket)
+    public function destroy(int $ticketId): JsonResponse|TicketResource
     {
         try {
+            $ticket = Ticket::findOrFail($ticketId);
+
             return DB::transaction(function () use ($ticket) {
                 $ticket->delete();
 
                 return $this->success("Ticket deleted.");
             });
+        } catch (ModelNotFoundException $exception) {
+            return $this->error("Ticket not found.", 404);
         } catch (Throwable $exception) {
             return $this->success("Couldn't delete a ticket.", [
                 'error' => $exception->getMessage()
