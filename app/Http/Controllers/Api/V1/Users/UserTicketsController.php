@@ -8,6 +8,7 @@ use App\Http\Requests\Api\V1\Tickets\StoreTicketRequest;
 use App\Http\Requests\Api\V1\Tickets\UpdateTicketRequest;
 use App\Http\Resources\Api\V1\TicketResource;
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;

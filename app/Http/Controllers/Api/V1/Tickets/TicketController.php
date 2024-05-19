@@ -8,6 +8,7 @@ use App\Http\Requests\Api\V1\Tickets\StoreTicketRequest;
 use App\Http\Requests\Api\V1\Tickets\UpdateTicketRequest;
 use App\Http\Resources\Api\V1\TicketResource;
 use App\Models\Ticket;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -19,9 +20,15 @@ class TicketController extends ApiController
     /**
      * Display a listing of the resource.
      */
-    public function index(TicketFilter $filter): AnonymousResourceCollection
+    public function index(TicketFilter $filter): JsonResponse|AnonymousResourceCollection
     {
-        return TicketResource::collection(Ticket::filter($filter)->paginate(10));
+        try {
+            $this->authorize('viewAny', Ticket::class);
+
+            return TicketResource::collection(Ticket::filter($filter)->paginate(10));
+        } catch (AuthorizationException $exception) {
+            return $this->error("You don't have access.", 403);
+        }
     }
 
     /**
@@ -30,11 +37,15 @@ class TicketController extends ApiController
     public function store(StoreTicketRequest $request): JsonResponse|TicketResource
     {
         try {
+            $this->authorize('create', Ticket::class);
+
             return DB::transaction(function () use ($request) {
                 $ticket = Ticket::create($request->mappedAttributes());
 
                 return new TicketResource($ticket);
             });
+        } catch (AuthorizationException $exception) {
+            return $this->error("You don't have access.", 403);
         } catch (Throwable $exception) {
             return $this->success("Couldn't create a new ticket.", [
                 'error' => $exception->getMessage()
@@ -50,6 +61,8 @@ class TicketController extends ApiController
         try {
             $ticket = Ticket::findOrFail($ticketId);
 
+            $this->authorize('view', $ticket);
+
             if ($this->include('user')) {
                 return new TicketResource($ticket->load('user'));
             }
@@ -57,6 +70,8 @@ class TicketController extends ApiController
             return new TicketResource($ticket);
         } catch (ModelNotFoundException $exception) {
             return $this->error("Ticket not found.", 404);
+        } catch (AuthorizationException $exception) {
+            return $this->error("You don't have access.", 403);
         }
     }
 
@@ -68,6 +83,8 @@ class TicketController extends ApiController
         try {
             $ticket = Ticket::findOrFail($ticketId);
 
+            $this->authorize('update', $ticket);
+
             return DB::transaction(function () use ($request, $ticket) {
                 $ticket->update($request->mappedAttributes());
 
@@ -75,6 +92,8 @@ class TicketController extends ApiController
             });
         } catch (ModelNotFoundException $exception) {
             return $this->error("Ticket not found.", 404);
+        } catch (AuthorizationException $exception) {
+            return $this->error("You don't have access.", 403);
         } catch (Throwable $exception) {
             return $this->success("Couldn't update a ticket.", [
                 'error' => $exception->getMessage()
@@ -90,6 +109,8 @@ class TicketController extends ApiController
         try {
             $ticket = Ticket::findOrFail($ticketId);
 
+            $this->authorize('destroy', $ticket);
+
             return DB::transaction(function () use ($ticket) {
                 $ticket->delete();
 
@@ -97,6 +118,8 @@ class TicketController extends ApiController
             });
         } catch (ModelNotFoundException $exception) {
             return $this->error("Ticket not found.", 404);
+        } catch (AuthorizationException $exception) {
+            return $this->error("You don't have access.", 403);
         } catch (Throwable $exception) {
             return $this->success("Couldn't delete a ticket.", [
                 'error' => $exception->getMessage()

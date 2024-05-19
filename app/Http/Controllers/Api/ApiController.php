@@ -4,11 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Contracts\Traits\ApiResponseTrait;
 use App\Http\Controllers\Controller;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 
 class ApiController extends Controller
 {
-    use ApiResponseTrait;
+    use ApiResponseTrait, AuthorizesRequests;
 
     public function __construct(protected Request $request)
     {
