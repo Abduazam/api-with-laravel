@@ -1,5 +1,7 @@
 <?php
 
+use App\Contracts\Exceptions\ApiExceptionHandler;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -21,5 +23,13 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->render(function (Throwable $throwable, Request $request) {
+            if ($request->is('api/*')) {
+                $handler = new ApiExceptionHandler();
+
+                return $handler->handle($throwable);
+            }
+
+            return $throwable;
+        });
     })->create();

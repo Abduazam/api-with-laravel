@@ -2,18 +2,17 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Contracts\Traits\ApiResponseTrait;
-use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\LoginRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class AuthController extends Controller
+class AuthController extends ApiController
 {
-    use ApiResponseTrait;
-
+    /**
+     * Login
+     */
     public function login(LoginRequest $request): JsonResponse
     {
         $validatedData = $request->validated();
@@ -33,6 +32,9 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Logout
+     */
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();

@@ -13,4 +13,7 @@ Route::middleware('auth:sanctum')->group(function () {
     })->name('me');
 });
 
+Route::get('/test', function (Request $request) {
+    return $request->user();
+});
 

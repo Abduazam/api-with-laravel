@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers\Api\V1\Users;
 
+use App\Actions\ActionHandler;
+use App\Actions\Users\UserTickets\UserTicketDeleteAction;
+use App\Actions\Users\UserTickets\UserTicketStoreAction;
+use App\Actions\Users\UserTickets\UserTicketUpdateAction;
 use App\Http\Controllers\Api\ApiController;
 use App\Http\Filters\Api\V1\Tickets\TicketFilter;
 use App\Http\Requests\Api\V1\Tickets\StoreTicketRequest;
@@ -9,121 +13,75 @@ use App\Http\Requests\Api\V1\Tickets\UpdateTicketRequest;
 use App\Http\Resources\Api\V1\TicketResource;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Support\Facades\DB;
-use Throwable;
 
 class UserTicketsController extends ApiController
 {
     /**
-     * Display a listing of the resource.
+     * User tickets index.
+     * @throws AuthorizationException
      */
-    public function index(int $userId, TicketFilter $filter): JsonResponse|AnonymousResourceCollection
+    public function index(User $user, TicketFilter $filter): JsonResponse|AnonymousResourceCollection
     {
-        try {
-            $user = User::findOrFail($userId);
+        $this->authorize('viewAny', 'user-tickets');
 
-            return TicketResource::collection($user->tickets()->filter($filter)->paginate(5));
-        } catch (ModelNotFoundException $exception) {
-            return $this->error("User not found", 404);
-        }
+        return TicketResource::collection($user->tickets()->filter($filter)->paginate(5));
     }
 
     /**
-     * Store a newly created resource in storage.
+     * User ticket store.
+     * @throws AuthorizationException
      */
-    public function store(int $userId, StoreTicketRequest $request): JsonResponse|TicketResource
+    public function store(User $user, StoreTicketRequest $request, ActionHandler $handler): JsonResponse|TicketResource
     {
-        try {
-            $user = User::findOrFail($userId);
+        $this->authorize('create', 'user-tickets');
 
-            $ticket = $user->tickets()->create($request->mappedAttributes());
-
-            return new TicketResource($ticket);
-        } catch (ModelNotFoundException $exception) {
-            return $this->error("User not found", 404);
-        }
+        return $handler->handle(
+            new UserTicketStoreAction($user, $request->mappedAttributes())
+        );
     }
 
     /**
-     * Display the specified resource.
+     * User ticket show.
+     * @throws AuthorizationException
      */
-    public function show(int $userId, int $ticketId): JsonResponse|TicketResource
+    public function show(User $user, int $ticketId): JsonResponse|TicketResource
     {
-        try {
-            $user = User::findOrFail($userId);
-        } catch (ModelNotFoundException $exception) {
-            return $this->error("User not found", 404);
-        }
+        $this->authorize('view', 'user-tickets');
 
-        try {
-            $ticket = $user->tickets()->findOrFail($ticketId);
-        } catch (ModelNotFoundException $exception) {
-            return $this->error("Ticket not found", 404);
-        }
+        $ticket = $user->tickets()->findOrFail($ticketId);
 
         return new TicketResource($ticket);
     }
 
     /**
-     * Update the specified resource in storage.
+     * User ticket update.
+     * @throws AuthorizationException
      */
-    public function update(int $userId, int $ticketId, UpdateTicketRequest $request): JsonResponse|TicketResource
+    public function update(User $user, int $ticketId, UpdateTicketRequest $request, ActionHandler $handler): JsonResponse|TicketResource
     {
-        try {
-            $user = User::findOrFail($userId);
-        } catch (ModelNotFoundException $exception) {
-            return $this->error("User not found", 404);
-        }
+        $this->authorize('update', 'user-tickets');
 
-        try {
-            $ticket = $user->tickets()->findOrFail($ticketId);
-        } catch (ModelNotFoundException $exception) {
-            return $this->error("Ticket not found", 404);
-        }
+        $ticket = $user->tickets()->findOrFail($ticketId);
 
-        try {
-            return DB::transaction(function () use ($request, $ticket) {
-                $ticket->update($request->mappedAttributes());
-
-                return new TicketResource($ticket);
-            });
-        } catch (Throwable $exception) {
-            return $this->success("Couldn't update a ticket.", [
-                'error' => $exception->getMessage()
-            ]);
-        }
+        return $handler->handle(
+            new UserTicketUpdateAction($ticket, $request->mappedAttributes())
+        );
     }
 
     /**
-     * Remove the specified resource from storage.
+     * User ticket delete.
+     * @throws AuthorizationException
      */
-    public function destroy(int $userId, int $ticketId): JsonResponse
+    public function destroy(User $user, int $ticketId, ActionHandler $handler): JsonResponse
     {
-        try {
-            $user = User::findOrFail($userId);
-        } catch (ModelNotFoundException $exception) {
-            return $this->error("User not found", 404);
-        }
+        $this->authorize('delete', 'user-tickets');
 
-        try {
-            $ticket = $user->tickets()->findOrFail($ticketId);
-        } catch (ModelNotFoundException $exception) {
-            return $this->error("Ticket not found", 404);
-        }
+        $ticket = $user->tickets()->findOrFail($ticketId);
 
-        try {
-            return DB::transaction(function () use ($ticket) {
-                $ticket->delete();
-
-                return $this->success("Ticket deleted.");
-            });
-        } catch (Throwable $exception) {
-            return $this->success("Couldn't delete a ticket.", [
-                'error' => $exception->getMessage()
-            ]);
-        }
+        return $handler->handle(
+            new UserTicketDeleteAction($user, $ticket)
+        );
     }
 }

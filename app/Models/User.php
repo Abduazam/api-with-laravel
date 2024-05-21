@@ -6,6 +6,7 @@ namespace App\Models;
 use App\Http\Filters\Api\V1\Users\UserFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -14,6 +15,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 /**
  * @property $id
+ * @mixin Builder
  */
 class User extends Authenticatable
 {
